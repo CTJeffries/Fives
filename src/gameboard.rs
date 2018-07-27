@@ -13,7 +13,6 @@
 use rand::{thread_rng, Rng, random};
 use piston::input::{Button, GenericEvent, Key};
 
-
 // Constants
 const SIZE: usize = 5;
 
@@ -23,6 +22,8 @@ const SIZE: usize = 5;
 pub struct Gameboard {
     // 2 Dimensional array that stores the cells. A 0 represents an empty cell.
     pub cells: [[u64; SIZE]; SIZE],
+    // Score, the sum of all pieces on the board.
+    pub score: u64,
 }
 
 impl Gameboard {
@@ -30,12 +31,14 @@ impl Gameboard {
     pub fn new() -> Gameboard {
         Gameboard {
             cells: [[0; SIZE]; SIZE],
+            score: 0,
         }
     }
 
     // Called when a new game is started. Clear the board, initialize 4 random cells.
     pub fn new_game(&mut self) {
         self.cells = [[0; SIZE]; SIZE];
+        self.score = 0;
         let mut generated_cells = 0;
         // Select four random cells, and if they are empty put in 5 or 10, if they are not empty,
         // select another random cell.
@@ -63,10 +66,10 @@ impl Gameboard {
             }
         }
         if success {
-            let val = thread_rng().gen_range(1, 4) * 5;
+            let val = self.new_val();
             let mut available = vec![];
             for i in 0..SIZE {
-                if self.cells[i][SIZE - 1] == 0 {
+                if self.cells[SIZE - 1][i] == 0 {
                     available.push(i)
                 }
             }
@@ -92,10 +95,10 @@ impl Gameboard {
             }
         }
         if success {
-            let val = thread_rng().gen_range(1, 3) * 5;
+            let val = self.new_val();
             let mut available = vec![];
             for i in 0..SIZE {
-                if self.cells[i][0] == 0 {
+                if self.cells[0][i] == 0 {
                     available.push(i)
                 }
             }
@@ -121,10 +124,10 @@ impl Gameboard {
             }
         }
         if success {
-            let val = thread_rng().gen_range(1, 4) * 5;
+            let val = self.new_val();
             let mut available = vec![];
             for i in 0..SIZE {
-                if self.cells[SIZE - 1][i] == 0 {
+                if self.cells[i][SIZE - 1] == 0 {
                     available.push(i)
                 }
             }
@@ -150,10 +153,10 @@ impl Gameboard {
             }
         }
         if success {
-            let val = thread_rng().gen_range(1, 4) * 5;
+            let val = self.new_val();
             let mut available = vec![];
             for i in 0..SIZE {
-                if self.cells[0][i] == 0 {
+                if self.cells[i][0] == 0 {
                     available.push(i)
                 }
             }
@@ -192,9 +195,41 @@ impl Gameboard {
 
     }
 
+    // Return the value of the cell.
+    pub fn get_val(&self, current_cell: [usize; 2]) -> u64 {
+        return self.cells[current_cell[1]][current_cell[0]]
+    }
+
     // Set cell value.
     fn set(&mut self, current_cell: [usize; 2], val: u64) {
         self.cells[current_cell[1]][current_cell[0]] = val;
+    }
+
+    // Generate a new value for the board.
+    fn new_val(&self) -> u64 {
+        (2_i32.pow(thread_rng().gen_range(0, 3)) * 5) as u64
+    }
+
+    // Get the score as a string.
+    pub fn get_score(&self) -> String {
+        self.score.to_string()
+    }
+
+    // Recalculates the score. Score is simply the sum of all of the pieces on the board, plus the
+    // the largest tile multiplied by 5.
+    fn update_score(&mut self) {
+        let mut score: u64 = 0;
+        let mut max: u64 = 0;
+        for i in 0..SIZE {
+            for j in 0..SIZE {
+                score += self.cells[i][j];
+                if self.cells[i][j] > max {
+                    max = self.cells[i][j]
+                }
+            }
+        }
+        score += max * 5;
+        self.score = score;
     }
 
     // Handles events.
@@ -209,6 +244,7 @@ impl Gameboard {
                 _ => {}
             }
         }
+        self.update_score();
     }
 }
 

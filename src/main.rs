@@ -43,7 +43,7 @@ fn main() {
     // Srgb is set to false, as otherwise the application crashes.
     // Indicate which OpenGL version to use.
     // Allow the window to be exited by pressing Escape.
-    let windowing_settings = WindowSettings::new("Fives", [600; 2])
+    let windowing_settings = WindowSettings::new("Fives", [600, 700])
         .srgb(false)
         .opengl(opengl_ver)
         .exit_on_esc(true);

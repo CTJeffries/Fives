@@ -27,6 +27,7 @@ pub struct GameboardGraphicsSettings {
     pub board_edge_color: Color,
     pub board_edge_radius: f64,
     pub text_color: Color,
+    pub tile_colors: [Color; 6],
 }
 
 impl GameboardGraphicsSettings {
@@ -35,12 +36,20 @@ impl GameboardGraphicsSettings {
         GameboardGraphicsSettings {
             position: [10.0; 2],
             length: 580.0,
-            background_color: [0.7, 0.7, 0.7, 1.0],
+            background_color: [0.9, 0.9, 0.9, 1.0],
             border_color: [0.1, 0.1, 0.1, 1.0],
             border_edge_radius: 4.0,
             board_edge_color: [0.2, 0.2, 0.2, 1.0],
             board_edge_radius: 2.0,
             text_color: [1.0, 1.0, 1.0, 1.0],
+            tile_colors: [
+                [1.0, 0.0, 0.0, 1.0],
+                [0.0, 1.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0, 1.0],
+                [1.0, 1.0, 0.0, 1.0],
+                [1.0, 0.0, 1.0, 1.0],
+                [0.0, 1.0, 1.0, 1.0],
+            ],
         }
     }
 }
@@ -73,20 +82,42 @@ impl GameboardGraphics {
         ];
         Rectangle::new(settings.background_color).draw(board_rect, &c.draw_state, c.transform, g);
 
+        // Draw tile colors.
+        let tile_size = settings.length / 5.0;
+        for j in 0..5 {
+            for i in 0..5 {
+                let val = board.get_val([i, j]);
+                if val > 0 {
+                    let pos = [(i as f64) * tile_size, (j as f64) * tile_size];
+                    let tile_rect = [
+                        settings.position[0] + pos[0], settings.position[1] + pos[1],
+                        tile_size, tile_size
+                    ];
+                    Rectangle::new(self.get_color(val))
+                        .draw(tile_rect, &c.draw_state, c.transform, g);
+                }
+            }
+        }
+
         // Draw numbers.
         let cell_size = settings.length / 5.0;
         for j in 0..5 {
             for i in 0..5 {
                 let pos = [
-                    settings.position[0] + i as f64 * cell_size + 20.0,
-                    settings.position[1] + j as f64 * cell_size + 30.0
+                    settings.position[0] + i as f64 * cell_size + 10.0,
+                    settings.position[1] + j as f64 * cell_size + 65.0
                 ];
                 if let Some(number) = board.get_string([i, j]) {
-                    text::Text::new(34).draw(&number, glyphs, &c.draw_state,
-                                             c.transform.trans(pos[0], pos[1]), g);
+                    text::Text::new_color(settings.text_color, 40)
+                        .draw(&number, glyphs, &c.draw_state,
+                              c.transform.trans(pos[0], pos[1]), g);
                 }
             }
         }
+
+        // Draw score.
+        text::Text::new(50).draw(&board.get_score(), glyphs, &c.draw_state,
+                              c.transform.trans(20.0, settings.length + 50.0), g);
 
         // Draw grid.
         let border_edge = Line::new(settings.border_color, settings.border_edge_radius);
@@ -106,6 +137,16 @@ impl GameboardGraphics {
         // Draw board edge.
         Rectangle::new_border(settings.board_edge_color, settings.board_edge_radius)
             .draw(board_rect, &c.draw_state, c.transform, g);
+    }
+
+    fn get_color(&self, val: u64) -> Color {
+        let mut color = self.settings.tile_colors[((val as f64).log2() as usize - 1) % 6];
+        for unused in 0..((val as f64 / 5.0).log2() as usize / 6) {
+            for x in 0..4 {
+                color[x] = color[x] * 0.8;
+            }
+        }
+        return color
     }
 }
 
